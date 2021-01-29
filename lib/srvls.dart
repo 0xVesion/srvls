@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 typedef HandlerFunction = FutureOr<Response> Function(Request);
 
@@ -47,5 +49,39 @@ class Request {
       };
 }
 
-Future<void> run(Map<String, HandlerFunction> routeHandlerMap) async =>
-    print(routeHandlerMap);
+Future<void> run(
+  List<String> args,
+  Map<String, HandlerFunction> routeHandlerMap,
+) async {
+  print(args);
+  print(routeHandlerMap);
+
+  var server = await HttpServer.bind(
+    InternetAddress.loopbackIPv4,
+    4040,
+  );
+  print('Listening on localhost:${server.port}');
+
+  await for (HttpRequest request in server) {
+    final json = request.headers.contentType == ContentType.json
+        ? request
+            .cast<List<int>>()
+            .transform<String>(Utf8Decoder())
+            .transform(JsonDecoder())
+            .first
+        : null;
+
+    final headers = <String, String>{};
+    request.headers.forEach((name, values) {
+      headers[name] = values.join(',');
+    });
+
+    final req = Request(
+      path: request.uri.path,
+      headers: headers,
+      json: json,
+    );
+
+    await request.response.close();
+  }
+}

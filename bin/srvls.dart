@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'package:dart_style/dart_style.dart';
-
 void main(List<String> args) async {
   final dir = Directory('./functions');
 
@@ -28,7 +26,7 @@ Future<String> _compile(File mainFile) async {
 
 Future _writeSrc(File mainFile, List<FunctionReference> functions) async {
   if (!await mainFile.parent.exists()) await mainFile.parent.create();
-  final mainSrc = DartFormatter().format(_renderMain(functions));
+  final mainSrc = _renderMain(functions);
   await mainFile.writeAsString(mainSrc);
 }
 
@@ -45,7 +43,7 @@ String _renderMain(List<FunctionReference> functions) => '''
 import 'package:srvls/srvls.dart';
 ${functions.map((event) => event.import).join('\n')}
   
-Future<void> main(List<String> args) => run({
+Future<void> main(List<String> args) => run(args, {
     ${functions.map((e) => "'${e.route}': ${e.id}.handler,").join('\n')}
   });
 ''';
