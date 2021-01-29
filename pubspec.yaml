@@ -6,7 +6,8 @@ publish_to: 'none'
 environment:
   sdk: '>=2.10.0 <3.0.0'
 
-dependencies: {}
+dependencies:
+  dart_style: ^1.3.11
 
 dev_dependencies:
   pedantic: ^1.9.0

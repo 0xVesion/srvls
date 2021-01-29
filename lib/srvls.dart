@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:isolate';
 
 typedef HandlerFunction = FutureOr<Response> Function(Request);
 
@@ -48,21 +47,5 @@ class Request {
       };
 }
 
-Future<void> srvls(
-  List<String> args,
-  SendPort sendPort,
-  HandlerFunction handler,
-) async {
-  final receivePort = ReceivePort();
-
-  sendPort.send(receivePort.sendPort);
-
-  await receivePort.listen((dynamic rawRequest) async {
-    final request = Request.fromJson(rawRequest as Map<String, dynamic>);
-
-    final response = await handler(request);
-    final rawResponse = response.toJson();
-
-    sendPort.send(rawResponse);
-  });
-}
+Future<void> run(Map<String, HandlerFunction> routeHandlerMap) async =>
+    print(routeHandlerMap);

@@ -1,55 +1,66 @@
 import 'dart:io';
 
-import 'dart:isolate';
+import 'package:dart_style/dart_style.dart';
 
+void main(List<String> args) async {
+  final dir = Directory('./functions');
+
+  final functions = await _readFunctions(dir);
+
+  print('Generating server for ${functions.length} functions...');
+  final mainFile = File('./srvls.dart');
+  await _writeSrc(mainFile, functions);
+
+  print('Compiling...');
+  final exePath = await _compile(mainFile);
+  print('Successfully built ${File(exePath)}');
+}
+
+Future<String> _compile(File mainFile) async {
+  final process = await Process.run('dart', ['compile', 'exe', mainFile.path]);
+  if (process.exitCode != 0) throw Exception('Error whilst compiling!');
+  await mainFile.delete();
+
+  final exePath = mainFile.path.replaceFirst('.dart', '.exe');
+  await Process.run('chmod', ['+x', exePath]);
+  return exePath;
+}
+
+Future _writeSrc(File mainFile, List<FunctionReference> functions) async {
+  if (!await mainFile.parent.exists()) await mainFile.parent.create();
+  final mainSrc = DartFormatter().format(_renderMain(functions));
+  await mainFile.writeAsString(mainSrc);
+}
+
+Future<List<FunctionReference>> _readFunctions(Directory dir) async {
+  return await dir
+      .list(recursive: true)
+      .where((e) => e is File)
+      .cast<File>()
+      .map((e) => FunctionReference(e))
+      .toList();
+}
+
+String _renderMain(List<FunctionReference> functions) => '''
 import 'package:srvls/srvls.dart';
+${functions.map((event) => event.import).join('\n')}
+  
+Future<void> main(List<String> args) => run({
+    ${functions.map((e) => "'${e.route}': ${e.id}.handler,").join('\n')}
+  });
+''';
 
-Future<void> main() async {
-  print('Starting...');
-  final handler = await HandlerIsolate.init(
-      File('./functions/forms/save.dart').absolute.path);
+class FunctionReference {
+  final File file;
 
-  final response = await handler.request(Request(
-    path: '/forms/save',
-    json: {'name': 'World'},
-  ));
+  FunctionReference(this.file);
 
-  print(response.toJson());
+  String get route =>
+      file.path.replaceFirst('./functions', '').replaceFirst('.dart', '');
+
+  String get id => route.replaceAll('/', '_');
+
+  String get import => "import '${file.absolute.path}' as $id;";
 }
 
-class HandlerIsolate {
-  ReceivePort receiverPort;
-
-  Stream<dynamic> receiveStream;
-
-  SendPort sendPort;
-
-  HandlerIsolate._();
-
-  static Future<HandlerIsolate> init(String path) async {
-    final handler = HandlerIsolate._();
-    await handler._init(path);
-
-    return handler;
-  }
-
-  Future<void> _init(String path) async {
-    receiverPort = ReceivePort();
-    receiveStream = receiverPort.asBroadcastStream();
-
-    await Isolate.spawnUri(
-      Uri.parse(path),
-      [],
-      receiverPort.sendPort,
-    );
-
-    sendPort = await receiveStream.first as SendPort;
-  }
-
-  Future<Response> request(Request request) async {
-    sendPort.send(request.toJson());
-
-    final rawResponse = await receiveStream.first as Map<String, dynamic>;
-    return Response.fromJson(rawResponse);
-  }
-}
+//refer()
