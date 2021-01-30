@@ -60,5 +60,3 @@ class FunctionReference {
 
   String get import => "import '${file.absolute.path}' as $id;";
 }
-
-//refer()

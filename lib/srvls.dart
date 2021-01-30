@@ -27,22 +27,26 @@ class Response {
 }
 
 class Request {
+  final String method;
   final String path;
   final Map<String, String> headers;
   final dynamic json;
 
   Request({
+    this.method,
     this.path,
     this.headers,
     this.json,
   });
 
   Request.fromJson(Map<String, dynamic> json)
-      : path = json['path'] as String,
+      : method = json['method'] as String,
+        path = json['path'] as String,
         headers = json['headers'] as Map<String, String>,
         json = json['json'] as dynamic;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
+        'method': method,
         'path': path,
         'headers': headers,
         'json': json,
@@ -53,9 +57,6 @@ Future<void> run(
   List<String> args,
   Map<String, HandlerFunction> routeHandlerMap,
 ) async {
-  print(args);
-  print(routeHandlerMap);
-
   var server = await HttpServer.bind(
     InternetAddress.loopbackIPv4,
     4040,
@@ -63,13 +64,14 @@ Future<void> run(
   print('Listening on localhost:${server.port}');
 
   await for (HttpRequest request in server) {
-    final json = request.headers.contentType == ContentType.json
-        ? request
-            .cast<List<int>>()
-            .transform<String>(Utf8Decoder())
-            .transform(JsonDecoder())
-            .first
-        : null;
+    final json =
+        request.headers.contentType.primaryType == ContentType.json.primaryType
+            ? await request
+                .cast<List<int>>()
+                .transform<String>(Utf8Decoder())
+                .transform(JsonDecoder())
+                .first
+            : null;
 
     final headers = <String, String>{};
     request.headers.forEach((name, values) {
@@ -77,6 +79,7 @@ Future<void> run(
     });
 
     final req = Request(
+      method: request.method,
       path: request.uri.path,
       headers: headers,
       json: json,
