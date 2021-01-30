@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 void main(List<String> args) async {
   final dir = Directory('./functions');
@@ -56,7 +57,8 @@ class FunctionReference {
   String get route =>
       file.path.replaceFirst('./functions', '').replaceFirst('.dart', '');
 
-  String get id => route.replaceAll('/', '_');
+  final String id = String.fromCharCodes(
+      List.generate(6, (index) => Random().nextInt(25) + 97));
 
   String get import => "import '${file.absolute.path}' as $id;";
 }
