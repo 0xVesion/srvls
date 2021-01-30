@@ -3,6 +3,9 @@ description: A simple command-line application.
 version: 0.1.0
 publish_to: 'none'
 
+executables:
+  srvls:
+
 environment:
   sdk: '>=2.10.0 <3.0.0'
 

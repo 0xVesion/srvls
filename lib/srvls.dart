@@ -8,7 +8,7 @@ import 'package:shelf_router/shelf_router.dart';
 export 'package:shelf/shelf.dart';
 
 extension SrvlsRequest on Request {
-  Future<dynamic> get json async => jsonDecode(await readAsString());
+  Future<dynamic> readAsJson() async => jsonDecode(await readAsString());
 }
 
 Future<void> run(
