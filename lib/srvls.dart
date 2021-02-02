@@ -24,6 +24,6 @@ Future<void> run(
     router.all(route, handler);
   });
 
-  final server = await io.serve(router, 'localhost', 8080);
+  final server = await io.serve(router, '0.0.0.0', 8080);
   print('Server running on port ${server.port}!');
 }
